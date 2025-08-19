@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Instagram Sentiment Analyzer - About{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">About Instagram Sentiment Analyzer</h1>
+                    <p class="card-text">This is a powerful tool designed to analyze the sentiment of Instagram posts and comments</p>
+                    
+                    <h3>Features:</h3>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <i class="fas fa-brain text-primary"></i>
+                            <strong>AI-Powered Analysis:</strong> Uses state-of-the-art machine learning models
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-chart-line text-success"></i>
+                            <strong>Real-time Processing:</strong> Get instant sentiment analysis results
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-shield-alt text-warning"></i>
+                            <strong>Privacy Focused:</strong> Your data is processed securely and privately
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-mobile-alt text-info"></i>
+                            <strong>Mobile Friendly:</strong> Works perfectly on all devices
+                        </li>
+                    </ul>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

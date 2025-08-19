@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Filtered Results - Instagram Sentiment Analyzer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="card-title">
+                                <i class="fas fa-filter text-primary"></i> 
+                                Filtered Results
+                            </h2>
+                            <p class="card-text">View detailed sentiment analysis results</p>
+                        </div>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_posts }}</h3>
+                    <p class="card-text">Total Comments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ positive_posts }}</h3>
+                    <p class="card-text">Positive</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ negative_posts }}</h3>
+                    <p class="card-text">Negative</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ neutral_posts }}</h3>
+                    <p class="card-text">Neutral</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-table"></i> Comments</h5>
+                    <div class="d-flex gap-2">
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('filtered_results', start_date=start_date, end_date=end_date) }}" 
+                               class="btn btn-outline-primary">All ({{ total_posts }})</a>
+                            <a href="{{ url_for('filtered_results', start_date=start_date, end_date=end_date, sentiment='positive') }}" 
+                               class="btn btn-outline-success">Positive ({{ positive_posts }})</a>
+                            <a href="{{ url_for('filtered_results', start_date=start_date, end_date=end_date, sentiment='negative') }}" 
+                               class="btn btn-outline-danger">Negative ({{ negative_posts }})</a>
+                            <a href="{{ url_for('filtered_results', start_date=start_date, end_date=end_date, sentiment='neutral') }}" 
+                               class="btn btn-outline-secondary">Neutral ({{ neutral_posts }})</a>
+                        </div>
+                        
+                        {% if posts %}
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('export_excel', start_date=start_date, end_date=end_date, sentiment=sentiment_filter) }}" 
+                               class="btn btn-primary export-btn">
+                                <i class="fas fa-file-excel"></i> Export Excel
+                            </a>
+                            <a href="{{ url_for('export_pdf', start_date=start_date, end_date=end_date, sentiment=sentiment_filter) }}" 
+                               class="btn btn-secondary export-btn">
+                                <i class="fas fa-file-pdf"></i> Export PDF
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if posts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Comment</th>
+                                    <th>Sentiment</th>
+                                    <th>Polarity</th>
+                                    <th>Hashtag</th>
+                                    <th>Source</th>
+                                    {% if session.permissions.can_view_all_posts %}
+                                    <th>Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in posts %}
+                                <tr>
+                                    <td>{{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <div class="text-truncate mixed-text" style="max-width: 300px;" title="{{ post.caption }}">
+                                            {{ post.caption[:100] }}{% if post.caption|length > 100 %}...{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if post.sentiment == 'positive' else 'danger' if post.sentiment == 'negative' else 'secondary' }}">
+                                            {{ post.sentiment.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-{{ 'success' if post.polarity > 0 else 'danger' if post.polarity < 0 else 'secondary' }}" 
+                                                 style="width: {{ (post.polarity + 1) * 50 }}%">
+                                                {{ "%.2f"|format(post.polarity) }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ post.hashtag }}</span>
+                                        <div class="mt-1">
+                                            <a href="{{ url_for('export_hashtag', hashtag=post.hashtag) }}" 
+                                               class="btn btn-sm btn-outline-success hashtag-export-btn" 
+                                               title="Export this hashtag data">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                                                <span class="badge bg-{{ 'primary' if post.source == 'instagram' else 'success' }}">
+                            <i class="fab fa-{{ 'instagram' if post.source == 'instagram' else 'facebook' }}"></i>
+                            {{ post.source.title() }}
+                        </span>
+                                    </td>
+                                    {% if session.permissions.can_view_all_posts %}
+                                    <td>
+                                        <a href="{{ url_for('post_detail', post_id=post.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No comments found</h5>
+                        <p class="text-muted">Try adjusting your filters or analyze a new hashtag</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS for better styling -->
+<style>
+.progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+}
+.progress-bar {
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Arabic text support */
+.arabic-text {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.mixed-text {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Export button styling */
+.export-btn {
+    transition: all 0.3s ease;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.export-btn.btn-primary:hover {
+    background-color: #1B263B !important;
+    border-color: #1B263B !important;
+}
+
+.export-btn.btn-secondary:hover {
+    background-color: #00A8E8 !important;
+    border-color: #00A8E8 !important;
+}
+
+.hashtag-export-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+}
+
+.hashtag-export-btn:hover {
+    transform: scale(1.1);
+}
+</style>
+{% endblock %} 

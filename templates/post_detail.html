@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Post Details - Instagram Sentiment Analyzer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4><i class="fas fa-file-alt"></i> Post Details</h4>
+                <button onclick="window.history.back()" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5>Caption</h5>
+                        <p class="card-text">{{ post.caption }}</p>
+                        
+                        <h5 class="mt-4">Instagram Post Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Post ID:</strong> <span class="text-muted">{{ post.post_id }}</span></p>
+                                <p><strong>Hashtag:</strong> <span class="text-muted">#{{ post.hashtag }}</span></p>
+                                <p><strong>Created:</strong> <span class="text-muted">{{ post.created_at.strftime('%Y-%m-%d %H:%M:%S') if post.created_at else 'N/A' }}</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Likes:</strong> <span class="text-muted">{{ post.like_count }}</span></p>
+                                <p><strong>Comments:</strong> <span class="text-muted">{{ post.comments_count }}</span></p>
+                                {% if post.permalink %}
+                                <p><strong>Permalink:</strong> <a href="{{ post.permalink }}" target="_blank" class="text-primary">{{ post.permalink }}</a></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if post.media_url %}
+                        <h5 class="mt-4">Media</h5>
+                        <div class="text-center">
+                            <img src="{{ post.media_url }}" class="img-fluid rounded" alt="Instagram Post Media">
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-chart-line"></i> Sentiment Analysis</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <span class="badge bg-{{ 'success' if post.sentiment == 'positive' else 'danger' if post.sentiment == 'negative' else 'secondary' }} fs-6">
+                                        {{ post.sentiment.title() }}
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h6>Polarity Score</h6>
+                                    <div class="progress mb-2">
+                                        {% set progress = ((post.polarity + 1) / 2) * 100 %}
+                                        <div class="progress-bar bg-{{ 'success' if post.sentiment == 'positive' else 'danger' if post.sentiment == 'negative' else 'secondary' }}" 
+                                             style="width: {{ progress }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ "%.3f"|format(post.polarity) }}</small>
+                                </div>
+                                
+                                <div class="text-muted">
+                                    <small>
+                                        <i class="fas fa-clock"></i> Analyzed on<br>
+                                        {{ post.created_at.strftime('%Y-%m-%d %H:%M:%S') if post.created_at else 'N/A' }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

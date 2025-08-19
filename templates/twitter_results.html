@@ -1,0 +1,817 @@
+{% extends "base.html" %}
+
+{% block title %}Twitter Results - {{ hashtag }} - Instagram Sentiment Analyzer{% endblock %}
+
+{% block head %}
+<!-- Prevent browser caching to ensure fresh data -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fab fa-twitter text-primary me-2"></i>
+                        Twitter Analysis Results
+                    </h1>
+                    <p class="text-muted mb-0">Hashtag: <span class="badge bg-primary fs-6">#{{ hashtag }}</span></p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <a href="{{ url_for('twitter_search') }}" class="btn btn-outline-primary btn-sm me-2">
+                        <i class="fas fa-search me-1"></i>
+                        New Search
+                    </a>
+                    <a href="{{ url_for('refresh_twitter_results') }}" class="btn btn-outline-success btn-sm me-2">
+                        <i class="fas fa-sync-alt me-1"></i>
+                        Refresh Results
+                    </a>
+                    <a href="{{ url_for('clear_twitter_session') }}" class="btn btn-outline-secondary btn-sm me-3">
+                        <i class="fas fa-eraser me-1"></i>
+                        Clear Session
+                    </a>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('twitter_search') }}">Twitter Search</a></li>
+                            <li class="breadcrumb-item active">Results</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-comments text-primary fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">{{ total_tweets }}</h4>
+                            <p class="text-muted mb-0">Total Tweets</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-heart text-success fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">{{ total_likes }}</h4>
+                            <p class="text-muted mb-0">Total Likes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-reply text-warning fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">{{ total_comments }}</h4>
+                            <p class="text-muted mb-0">Total Comments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-chart-pie text-info fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">{{ sentiment_counts.get('positive', 0) + sentiment_counts.get('negative', 0) + sentiment_counts.get('neutral', 0) }}</h4>
+                            <p class="text-muted mb-0">Analyzed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sentiment Distribution -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Sentiment Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="fas fa-smile text-success fa-3x"></i>
+                            </div>
+                            <h4 class="text-success">{{ sentiment_counts.get('positive', 0) }}</h4>
+                            <p class="text-muted mb-0">Positive</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-secondary bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="fas fa-meh text-secondary fa-3x"></i>
+                            </div>
+                            <h4 class="text-secondary">{{ sentiment_counts.get('neutral', 0) }}</h4>
+                            <p class="text-muted mb-0">Neutral</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-danger bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="fas fa-frown text-danger fa-3x"></i>
+                            </div>
+                            <h4 class="text-danger">{{ sentiment_counts.get('negative', 0) }}</h4>
+                            <p class="text-muted mb-0">Negative</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-download me-2"></i>
+                        Export Data
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <a href="{{ url_for('export_twitter_excel') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-file-excel me-2"></i>
+                                    Export to Excel
+                                </a>
+                                <small class="text-muted text-center mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Complete data with all columns
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <a href="{{ url_for('export_twitter_pdf') }}" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-file-pdf me-2"></i>
+                                    Export to PDF
+                                </a>
+                                <small class="text-muted text-center mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Summary report with key metrics
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tweets Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Tweet Analysis Results
+                    </h5>
+                    <span class="badge bg-light text-dark fs-6">{{ tweets|length }} tweets</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Author</th>
+                                    <th>Tweet</th>
+                                    <th>Likes</th>
+                                    <th>Comments</th>
+                                    <th>Sentiment</th>
+                                    <th>Overall Sentiment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tweet in tweets %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if tweet.profile_image_url %}
+                                            <img src="{{ tweet.profile_image_url }}" alt="{{ tweet.name }}" 
+                                                 class="rounded-circle me-2" width="32" height="32">
+                                            {% else %}
+                                            <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 32px; height: 32px;">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ tweet.name }}</div>
+                                                <small class="text-muted">@{{ tweet.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="tweet-text" style="max-width: 300px;">
+                                            {{ tweet.text[:100] }}{% if tweet.text|length > 100 %}...{% endif %}
+                                        </div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ tweet.created_at[:10] if tweet.created_at else 'N/A' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-heart me-1"></i>
+                                            {{ tweet.like_count }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-comments me-1"></i>
+                                            {{ tweet.comments_count }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if tweet.sentiment == 'positive' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-smile me-1"></i>
+                                                Positive
+                                            </span>
+                                        {% elif tweet.sentiment == 'negative' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-frown me-1"></i>
+                                                Negative
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-meh me-1"></i>
+                                                Neutral
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if tweet.overall_sentiment == 'positive' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-smile me-1"></i>
+                                                Positive
+                                            </span>
+                                        {% elif tweet.overall_sentiment == 'negative' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-frown me-1"></i>
+                                                Negative
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-meh me-1"></i>
+                                                Neutral
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#tweetModal{{ loop.index }}"
+                                                    onclick="showModal('#tweetModal{{ loop.index }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{{ tweet.permalink }}" target="_blank" 
+                                               class="btn btn-sm btn-outline-info">
+                                                <i class="fab fa-twitter"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tweet Detail Modals -->
+{% for tweet in tweets %}
+<div class="modal fade" id="tweetModal{{ loop.index }}" tabindex="-1" aria-labelledby="tweetModalLabel{{ loop.index }}" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tweetModalLabel{{ loop.index }}">
+                    <i class="fab fa-twitter me-2"></i>
+                    Tweet Details - @{{ tweet.username }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tweet Content -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if tweet.profile_image_url %}
+                            <img src="{{ tweet.profile_image_url }}" alt="{{ tweet.name }}" 
+                                 class="rounded-circle me-3" width="48" height="48">
+                            {% else %}
+                            <div class="bg-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 48px; height: 48px;">
+                                <i class="fas fa-user text-white fa-lg"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ tweet.name }}</h6>
+                                <small class="text-muted">@{{ tweet.username }}</small>
+                            </div>
+                        </div>
+                        <p class="card-text fs-5">{{ tweet.text }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ tweet.created_at[:10] if tweet.created_at else 'N/A' }}
+                            </small>
+                            <div>
+                                <span class="badge bg-success me-2">
+                                    <i class="fas fa-heart me-1"></i>
+                                    {{ tweet.like_count }} likes
+                                </span>
+                                <span class="badge bg-info me-2">
+                                    <i class="fas fa-retweet me-1"></i>
+                                    {{ tweet.retweet_count }} retweets
+                                </span>
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-reply me-1"></i>
+                                    {{ tweet.reply_count }} replies
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentiment Analysis -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Tweet Sentiment</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                {% if tweet.sentiment == 'positive' %}
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-3 mx-auto mb-2" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-smile text-success fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-success">{{ tweet.sentiment|title }}</h5>
+                                {% elif tweet.sentiment == 'negative' %}
+                                    <div class="bg-danger bg-opacity-10 rounded-circle p-3 mx-auto mb-2" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-frown text-danger fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-danger">{{ tweet.sentiment|title }}</h5>
+                                {% else %}
+                                    <div class="bg-secondary bg-opacity-10 rounded-circle p-3 mx-auto mb-2" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-meh text-secondary fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-secondary">{{ tweet.sentiment|title }}</h5>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Polarity: {{ "%.3f"|format(tweet.polarity) }} | 
+                                    Subjectivity: {{ "%.3f"|format(tweet.subjectivity) }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Overall Sentiment</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                {% if tweet.overall_sentiment == 'positive' %}
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-3 mx-auto mb-2" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-smile text-success fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-success">{{ tweet.overall_sentiment|title }}</h5>
+                                {% elif tweet.overall_sentiment == 'negative' %}
+                                    <div class="bg-danger bg-opacity-10 rounded-circle p-3 mx-auto mb-2" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-frown text-danger fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-danger">{{ tweet.overall_sentiment|title }}</h5>
+                                {% else %}
+                                    <div class="bg-secondary bg-opacity-10 rounded-circle p-3 mx-auto mb-2" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-meh text-secondary fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-secondary">{{ tweet.overall_sentiment|title }}</h5>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Polarity: {{ "%.3f"|format(tweet.overall_polarity) }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Section -->
+                {% if tweet.comments %}
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-comments me-2"></i>
+                            Comments ({{ tweet.comments|length }})
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for comment in tweet.comments[:5] %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ comment.name }}</strong>
+                                    <small class="text-muted">@{{ comment.username }}</small>
+                                </div>
+                                <small class="text-muted">{{ comment.created_at[:10] if comment.created_at else 'N/A' }}</small>
+                            </div>
+                            <p class="mb-1">{{ comment.text }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success me-2">
+                                    <i class="fas fa-heart me-1"></i>
+                                    {{ comment.like_count }}
+                                </span>
+                                {% if comment.sentiment == 'positive' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-smile me-1"></i>
+                                        Positive
+                                    </span>
+                                {% elif comment.sentiment == 'negative' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-frown me-1"></i>
+                                        Negative
+                                    </span>
+                                {% elif comment.sentiment == 'neutral' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-meh me-1"></i>
+                                        Neutral
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-question me-1"></i>
+                                        Unknown
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if tweet.comments|length > 5 %}
+                        <div class="text-center">
+                            <small class="text-muted">
+                                Showing first 5 comments. Total: {{ tweet.comments|length }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <a href="{{ tweet.permalink }}" target="_blank" class="btn btn-primary">
+                    <i class="fab fa-twitter me-2"></i>
+                    View on Twitter
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-color)) !important;
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, var(--success-color), var(--primary-color)) !important;
+}
+
+.card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.card-header {
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.tweet-text {
+    line-height: 1.4;
+}
+
+.bg-opacity-10 {
+    --bs-bg-opacity: 0.1;
+}
+
+.rounded-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-header {
+    border-bottom: none;
+}
+
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+</style>
+{% endblock %}
+
+<script>
+// Enhanced error handling for modals to prevent freezing
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Twitter results page loaded');
+    
+    // Add error handling to all modals
+    const modals = document.querySelectorAll('.modal');
+    console.log(`Found ${modals.length} modals`);
+    
+    modals.forEach(function(modal, index) {
+        console.log(`Setting up modal ${index + 1}: ${modal.id}`);
+        
+        // Add error handling for modal show
+        modal.addEventListener('show.bs.modal', function(event) {
+            try {
+                console.log('Opening modal:', modal.id);
+                
+                // Check if modal content is valid
+                const modalBody = modal.querySelector('.modal-body');
+                if (!modalBody) {
+                    console.error('Modal body not found');
+                    return;
+                }
+                
+                // Validate comment data before showing
+                const comments = modalBody.querySelectorAll('.border-bottom');
+                comments.forEach(function(comment, commentIndex) {
+                    const sentimentBadge = comment.querySelector('.badge:last-child');
+                    if (sentimentBadge && !sentimentBadge.textContent.trim()) {
+                        console.warn(`Comment ${commentIndex + 1} has empty sentiment badge`);
+                        sentimentBadge.innerHTML = '<i class="fas fa-question me-1"></i>Unknown';
+                    }
+                });
+                
+                console.log('Modal prepared successfully');
+                
+            } catch (error) {
+                console.error('Error preparing modal:', error);
+                // Show error message to user
+                const modalBody = modal.querySelector('.modal-body');
+                if (modalBody) {
+                    modalBody.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Error Loading Content</h6>
+                            <p>There was an error loading the tweet details. Please try again.</p>
+                            <small class="text-muted">Error: ${error.message}</small>
+                        </div>
+                    `;
+                }
+            }
+        });
+        
+        // Add error handling for modal hide
+        modal.addEventListener('hidden.bs.modal', function(event) {
+            console.log('Modal closed:', modal.id);
+        });
+        
+        // Add error handling for modal errors
+        modal.addEventListener('error', function(event) {
+            console.error('Modal error:', event.error);
+            event.preventDefault();
+        });
+    });
+    
+    // Add error handling for modal trigger buttons
+    const modalTriggers = document.querySelectorAll('[data-bs-toggle="modal"]');
+    console.log(`Found ${modalTriggers.length} modal triggers`);
+    
+    modalTriggers.forEach(function(trigger, index) {
+        console.log(`Setting up trigger ${index + 1}: ${trigger.getAttribute('data-bs-target')}`);
+        
+        trigger.addEventListener('click', function(event) {
+            try {
+                const targetModal = this.getAttribute('data-bs-target');
+                console.log('Modal trigger clicked:', targetModal);
+                
+                // Validate target modal exists
+                if (!document.querySelector(targetModal)) {
+                    console.error('Target modal not found:', targetModal);
+                    event.preventDefault();
+                    alert('Error: Modal not found. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Add a small delay to ensure modal is ready
+                setTimeout(() => {
+                    try {
+                        const modal = document.querySelector(targetModal);
+                        if (modal) {
+                            const bsModal = new bootstrap.Modal(modal);
+                            bsModal.show();
+                        }
+                    } catch (modalError) {
+                        console.error('Error showing modal:', modalError);
+                        alert('Error opening modal. Please try again.');
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error in modal trigger:', error);
+                event.preventDefault();
+                alert('Error opening modal. Please try again.');
+            }
+        });
+    });
+    
+    // Test modal functionality
+    console.log('Testing modal functionality...');
+    const testModal = document.querySelector('#tweetModal1');
+    if (testModal) {
+        console.log('Test modal found, checking structure...');
+        const modalBody = testModal.querySelector('.modal-body');
+        const modalHeader = testModal.querySelector('.modal-header');
+        const modalFooter = testModal.querySelector('.modal-footer');
+        
+        console.log('Modal structure:', {
+            hasBody: !!modalBody,
+            hasHeader: !!modalHeader,
+            hasFooter: !!modalFooter,
+            bodyContent: modalBody ? modalBody.children.length : 0
+        });
+    }
+});
+
+// Global error handler for unhandled errors
+window.addEventListener('error', function(event) {
+    console.error('Global error:', event.error);
+    // Prevent page from freezing
+    event.preventDefault();
+});
+
+// Handle Bootstrap modal errors
+if (typeof bootstrap !== 'undefined') {
+    const originalModal = bootstrap.Modal;
+    bootstrap.Modal = function(element, options) {
+        try {
+            console.log('Creating Bootstrap modal for:', element.id);
+            return new originalModal(element, options);
+        } catch (error) {
+            console.error('Bootstrap modal error:', error);
+            // Return a safe fallback
+            return {
+                show: function() { 
+                    console.log('Modal show prevented due to error');
+                    // Try to show manually
+                    if (element) {
+                        element.classList.add('show');
+                        element.style.display = 'block';
+                        element.setAttribute('aria-hidden', 'false');
+                    }
+                },
+                hide: function() { 
+                    console.log('Modal hide prevented due to error');
+                    if (element) {
+                        element.classList.remove('show');
+                        element.style.display = 'none';
+                        element.setAttribute('aria-hidden', 'true');
+                    }
+                }
+            };
+        }
+    };
+}
+
+// Add manual modal show/hide functions as backup
+window.showModal = function(modalId) {
+    try {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+            
+            // Add backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.id = 'manual-backdrop';
+            document.body.appendChild(backdrop);
+            
+            console.log('Manual modal shown:', modalId);
+        }
+    } catch (error) {
+        console.error('Error in manual modal show:', error);
+    }
+};
+
+window.hideModal = function(modalId) {
+    try {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            
+            // Remove backdrop
+            const backdrop = document.getElementById('manual-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            
+            console.log('Manual modal hidden:', modalId);
+        }
+    } catch (error) {
+        console.error('Error in manual modal hide:', error);
+    }
+};
+
+// Page refresh logic to ensure fresh data
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if this page was loaded from browser back/forward navigation
+    if (performance.navigation.type === 2) { // 2 = back/forward navigation
+        console.log('Page loaded from browser navigation, refreshing to ensure fresh data');
+        window.location.reload(true); // Force reload from server
+        return;
+    }
+    
+    // Check if page was loaded from cache
+    if (performance.navigation.type === 1) { // 1 = page reload
+        console.log('Page was reloaded, data should be fresh');
+    }
+    
+    // Add timestamp to prevent caching issues
+    const currentTime = new Date().getTime();
+    console.log(`Page loaded at: ${new Date(currentTime).toLocaleString()}`);
+    
+    // Set up periodic refresh check (every 5 minutes)
+    setInterval(function() {
+        const timeSinceLoad = new Date().getTime() - currentTime;
+        if (timeSinceLoad > 300000) { // 5 minutes = 300000 ms
+            console.log('Page has been open for 5+ minutes, suggesting refresh needed');
+        }
+    }, 60000); // Check every minute
+});
+
+// Prevent browser back button from showing cached content
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        console.log('Page loaded from cache, refreshing to ensure fresh data');
+        window.location.reload(true);
+    }
+});
+</script>

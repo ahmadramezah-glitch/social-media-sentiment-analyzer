@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Overview - Social Media Sentiment Analyzer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-line text-primary"></i> 
+                        Dashboard Overview
+                    </h2>
+                    <p class="card-text">Comprehensive sentiment analysis across all social media platforms</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bar Chart Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Sentiment Analysis by Platform</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Filters -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="platformFilter" class="form-label">Platform Filter:</label>
+                                                                    <select class="form-select" id="platformFilter">
+                                            <option value="all">All Platforms</option>
+                                            <option value="instagram">Insta</option>
+                                            <option value="twitter">Twitter</option>
+                                            <option value="tiktok">TikTok</option>
+                                        </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sentimentFilter" class="form-label">Sentiment Filter:</label>
+                            <select class="form-select" id="sentimentFilter">
+                                <option value="all">All Sentiments</option>
+                                <option value="positive">Positive</option>
+                                <option value="negative">Negative</option>
+                                <option value="neutral">Neutral</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Canvas -->
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Posts Across All Platforms -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_posts_all_platforms }}</h3>
+                    <p class="card-text">Total Posts Across All Platforms</p>
+                    <small>Combined data from Instagram, Twitter, and TikTok</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Statistics -->
+    <div class="row mb-4">
+        <!-- Instagram Statistics -->
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fab fa-instagram me-2"></i> Instagram
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="text-success">{{ instagram_stats.total }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">{{ instagram_stats.positive }}</h4>
+                            <small class="text-muted">Positive</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-danger">{{ instagram_stats.negative }}</h4>
+                            <small class="text-muted">Negative</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-12">
+                            <h4 class="text-secondary">{{ instagram_stats.neutral }}</h4>
+                            <small class="text-muted">Neutral</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Twitter Statistics -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fab fa-twitter me-2"></i> Twitter
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="text-success">{{ twitter_stats.total }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">{{ twitter_stats.positive }}</h4>
+                            <small class="text-muted">Positive</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-danger">{{ twitter_stats.negative }}</h4>
+                            <small class="text-muted">Negative</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-12">
+                            <h4 class="text-secondary">{{ twitter_stats.neutral }}</h4>
+                            <small class="text-muted">Neutral</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TikTok Statistics -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fab fa-tiktok me-2"></i> TikTok
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="text-success">{{ tiktok_stats.total }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">{{ tiktok_stats.positive }}</h4>
+                            <small class="text-muted">Positive</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-danger">{{ tiktok_stats.negative }}</h4>
+                            <small class="text-muted">Negative</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-12">
+                            <h4 class="text-secondary">{{ tiktok_stats.neutral }}</h4>
+                            <small class="text-muted">Neutral</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sentiment Distribution Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_positive }}</h3>
+                    <p class="card-text">Total Positive</p>
+                    <small>{{ "%.1f"|format(positive_percentage) }}% of all posts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_negative }}</h3>
+                    <p class="card-text">Total Negative</p>
+                    <small>{{ "%.1f"|format(negative_percentage) }}% of all posts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_neutral }}</h3>
+                    <p class="card-text">Total Neutral</p>
+                    <small>{{ "%.1f"|format(neutral_percentage) }}% of all posts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_posts_all_platforms }}</h3>
+                    <p class="card-text">Total Posts</p>
+                    <small>Across all platforms</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get real data from backend template variables
+    const chartData = {
+        instagram: {
+            positive: {{ instagram_stats.positive }},
+            negative: {{ instagram_stats.negative }},
+            neutral: {{ instagram_stats.neutral }}
+        },
+        twitter: {
+            positive: {{ twitter_stats.positive }},
+            negative: {{ twitter_stats.negative }},
+            neutral: {{ twitter_stats.neutral }}
+        },
+        tiktok: {
+            positive: {{ tiktok_stats.positive }},
+            negative: {{ tiktok_stats.negative }},
+            neutral: {{ tiktok_stats.neutral }}
+        }
+    };
+
+    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    let chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+                                labels: ['Instagram', 'Twitter', 'TikTok'],
+            datasets: [
+                {
+                    label: 'Positive',
+                    data: [chartData.instagram.positive, chartData.twitter.positive, chartData.tiktok.positive],
+                    backgroundColor: '#28a745',
+                    borderColor: '#20c997',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Negative',
+                    data: [chartData.instagram.negative, chartData.twitter.negative, chartData.tiktok.negative],
+                    backgroundColor: '#dc3545',
+                    borderColor: '#c82333',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Neutral',
+                    data: [chartData.instagram.neutral, chartData.twitter.neutral, chartData.tiktok.neutral],
+                    backgroundColor: '#6c757d',
+                    borderColor: '#5a6268',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Posts'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Platform'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Sentiment Distribution by Platform'
+                }
+            }
+        }
+    });
+
+    // Filter functionality
+    document.getElementById('platformFilter').addEventListener('change', function() {
+        updateChart();
+    });
+
+    document.getElementById('sentimentFilter').addEventListener('change', function() {
+        updateChart();
+    });
+
+    function updateChart() {
+        const platformFilter = document.getElementById('platformFilter').value;
+        const sentimentFilter = document.getElementById('sentimentFilter').value;
+        
+        // Create filtered data based on selections
+        let filteredData = {};
+        let filteredLabels = [];
+        
+        // Apply platform filter
+        if (platformFilter === 'instagram') {
+            filteredData.instagram = chartData.instagram;
+            filteredLabels.push('Instagram');
+        } else if (platformFilter === 'twitter') {
+            filteredData.twitter = chartData.twitter;
+            filteredLabels.push('Twitter');
+        } else if (platformFilter === 'tiktok') {
+            filteredData.tiktok = chartData.tiktok;
+            filteredLabels.push('TikTok');
+        } else {
+            // All platforms
+            filteredData = chartData;
+                            filteredLabels = ['Instagram', 'Twitter', 'TikTok'];
+        }
+        
+        // Apply sentiment filter
+        let datasets = [];
+        if (sentimentFilter === 'positive' || sentimentFilter === 'all') {
+            datasets.push({
+                label: 'Positive',
+                data: filteredLabels.map(label => {
+                    const platform = label.toLowerCase();
+                    return filteredData[platform] ? filteredData[platform].positive : 0;
+                }),
+                backgroundColor: '#28a745',
+                borderColor: '#20c997',
+                borderWidth: 1
+            });
+        }
+        
+        if (sentimentFilter === 'negative' || sentimentFilter === 'all') {
+            datasets.push({
+                label: 'Negative',
+                data: filteredLabels.map(label => {
+                    const platform = label.toLowerCase();
+                    return filteredData[platform] ? filteredData[platform].negative : 0;
+                }),
+                backgroundColor: '#dc3545',
+                borderColor: '#c82333',
+                borderWidth: 1
+            });
+        }
+        
+        if (sentimentFilter === 'neutral' || sentimentFilter === 'all') {
+            datasets.push({
+                label: 'Neutral',
+                data: filteredLabels.map(label => {
+                    const platform = label.toLowerCase();
+                    return filteredData[platform] ? filteredData[platform].neutral : 0;
+                }),
+                backgroundColor: '#6c757d',
+                borderColor: '#5a6268',
+                borderWidth: 1
+            });
+        }
+        
+        // Update chart with filtered data
+        chart.data.labels = filteredLabels;
+        chart.data.datasets = datasets;
+        chart.update();
+    }
+});
+</script>
+{% endblock %}

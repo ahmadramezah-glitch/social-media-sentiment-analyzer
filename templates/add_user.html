@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - Instagram Sentiment Analyzer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="card-title">
+                                <i class="fas fa-user-plus text-primary"></i> 
+                                Add New User
+                            </h2>
+                            <p class="card-text">Create a new user account with specific permissions</p>
+                        </div>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Form -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> User Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_user') }}">
+                        <!-- Basic Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username *</label>
+                                    <input type="text" class="form-control" id="username" name="username" 
+                                           placeholder="Enter username" required>
+                                    <div class="form-text">Username must be unique</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           placeholder="Enter email address" required>
+                                    <div class="form-text">Email must be unique</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password *</label>
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           placeholder="Enter password" required>
+                                    <div class="form-text">Password should be at least 6 characters</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm Password *</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                           placeholder="Confirm password" required>
+                                    <div class="form-text">Must match the password above</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Role Selection -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-shield-alt"></i> Role & Permissions</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_admin" name="is_admin">
+                                <label class="form-check-label" for="is_admin">
+                                    <strong>Grant Full Admin Privileges</strong>
+                                </label>
+                                <div class="form-text">Admin users have access to all features and can manage other users</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Permission Checkboxes -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-key"></i> Specific Permissions</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="can_view_dashboard" name="can_view_dashboard" checked>
+                                        <label class="form-check-label" for="can_view_dashboard">
+                                            <strong>View Dashboard</strong>
+                                        </label>
+                                        <div class="form-text">Access to main dashboard</div>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="can_view_graphs" name="can_view_graphs" checked>
+                                        <label class="form-check-label" for="can_view_graphs">
+                                            <strong>View Graphs & Charts</strong>
+                                        </label>
+                                        <div class="form-text">See positive comments by month graph</div>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="can_search_hashtags" name="can_search_hashtags" checked>
+                                        <label class="form-check-label" for="can_search_hashtags">
+                                            <strong>Search Hashtags</strong>
+                                        </label>
+                                        <div class="form-text">Analyze new hashtags</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="can_view_filtered_results" name="can_view_filtered_results" checked>
+                                        <label class="form-check-label" for="can_view_filtered_results">
+                                            <strong>View Filtered Results</strong>
+                                        </label>
+                                        <div class="form-text">Use date and sentiment filters</div>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="can_view_all_posts" name="can_view_all_posts" checked>
+                                        <label class="form-check-label" for="can_view_all_posts">
+                                            <strong>View All Posts</strong>
+                                        </label>
+                                        <div class="form-text">See detailed post information</div>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="can_manage_users" name="can_manage_users">
+                                        <label class="form-check-label" for="can_manage_users">
+                                            <strong>Manage Users</strong>
+                                        </label>
+                                        <div class="form-text">Create and manage other users</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Role Presets -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-magic"></i> Quick Role Presets</h6>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setRole('viewer')">
+                                    <i class="fas fa-eye"></i> Viewer
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="setRole('analyst')">
+                                    <i class="fas fa-chart-line"></i> Analyst
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="setRole('manager')">
+                                    <i class="fas fa-users-cog"></i> Manager
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="setRole('admin')">
+                                    <i class="fas fa-crown"></i> Admin
+                                </button>
+                            </div>
+                            <div class="form-text">Click to quickly set common permission combinations</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value) {
+        if (this.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Passwords do not match');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+});
+
+// Admin checkbox handler
+document.getElementById('is_admin').addEventListener('change', function() {
+    const permissionCheckboxes = [
+        'can_view_dashboard', 'can_view_graphs', 'can_search_hashtags',
+        'can_view_filtered_results', 'can_view_all_posts', 'can_manage_users'
+    ];
+    
+    if (this.checked) {
+        // If admin is checked, enable all permissions
+        permissionCheckboxes.forEach(id => {
+            document.getElementById(id).checked = true;
+            document.getElementById(id).disabled = true;
+        });
+    } else {
+        // If admin is unchecked, enable permission checkboxes
+        permissionCheckboxes.forEach(id => {
+            document.getElementById(id).disabled = false;
+        });
+    }
+});
+
+// Role preset functions
+function setRole(role) {
+    const permissions = {
+        'viewer': {
+            'can_view_dashboard': true,
+            'can_view_graphs': true,
+            'can_search_hashtags': false,
+            'can_view_filtered_results': true,
+            'can_view_all_posts': false,
+            'can_manage_users': false
+        },
+        'analyst': {
+            'can_view_dashboard': true,
+            'can_view_graphs': true,
+            'can_search_hashtags': true,
+            'can_view_filtered_results': true,
+            'can_view_all_posts': true,
+            'can_manage_users': false
+        },
+        'manager': {
+            'can_view_dashboard': true,
+            'can_view_graphs': true,
+            'can_search_hashtags': true,
+            'can_view_filtered_results': true,
+            'can_view_all_posts': true,
+            'can_manage_users': true
+        },
+        'admin': {
+            'can_view_dashboard': true,
+            'can_view_graphs': true,
+            'can_search_hashtags': true,
+            'can_view_filtered_results': true,
+            'can_view_all_posts': true,
+            'can_manage_users': true
+        }
+    };
+    
+    const rolePermissions = permissions[role];
+    if (rolePermissions) {
+        Object.keys(rolePermissions).forEach(permission => {
+            const checkbox = document.getElementById(permission);
+            if (checkbox) {
+                checkbox.checked = rolePermissions[permission];
+            }
+        });
+        
+        // Set admin checkbox based on role
+        document.getElementById('is_admin').checked = (role === 'admin');
+        
+        // Trigger admin checkbox change event
+        document.getElementById('is_admin').dispatchEvent(new Event('change'));
+    }
+}
+</script>
+{% endblock %} 

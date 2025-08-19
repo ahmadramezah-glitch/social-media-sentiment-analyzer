@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}TikTok Video Analysis - Social Media Sentiment Analyzer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fab fa-tiktok text-primary"></i> TikTok Video Analysis
+                </h1>
+                <a href="{{ url_for('tiktok_analysis') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-hashtag me-1"></i> Hashtag Analysis
+                </a>
+            </div>
+            
+            <div class="row">
+                <!-- Video URL Input Form -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-link text-primary"></i> Analyze TikTok Video URL
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-3">
+                                <h6><i class="fas fa-info-circle"></i> How the TikTok Video Analysis Works:</h6>
+                                <ol class="mb-0 small">
+                                    <li><strong>Video Download:</strong> The system attempts to download your TikTok video</li>
+                                    <li><strong>Audio Extraction:</strong> Audio is extracted from the video file</li>
+                                    <li><strong>Speech-to-Text:</strong> Audio is converted to text using AI</li>
+                                    <li><strong>Language Detection:</strong> System detects the language of the content</li>
+                                    <li><strong>Translation:</strong> Non-English content is translated to English</li>
+                                    <li><strong>Sentiment Analysis:</strong> Text is analyzed for emotional tone</li>
+                                </ol>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        <strong>Note:</strong> Due to TikTok's anti-scraping measures, the system may use demo content for testing. 
+                                        In production with proper API access, this would process real video content.
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <form method="POST" action="{{ url_for('tiktok_video_analysis') }}">
+                                <div class="mb-3">
+                                    <label for="video_url" class="form-label">TikTok Video URL:</label>
+                                    <input type="url" 
+                                           class="form-control" 
+                                           id="video_url" 
+                                           name="video_url" 
+                                           placeholder="https://www.tiktok.com/@username/video/1234567890"
+                                           value="{{ request.form.get('video_url', '') }}"
+                                           required>
+                                    <div class="form-text">
+                                        Paste a TikTok video URL to analyze its content and sentiment.
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-play me-1"></i> Analyze Video
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analysis Results -->
+                <div class="col-lg-6">
+                    {% if analyzed_video %}
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-check-circle"></i> Analysis Results
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Video Preview -->
+                            <div class="text-center mb-3">
+                                <div class="bg-light border rounded p-4">
+                                    <i class="fab fa-tiktok fa-3x text-primary mb-2"></i>
+                                    <p class="mb-0 text-muted">Video Preview</p>
+                                    <small class="text-muted">{{ analyzed_video.video_url }}</small>
+                                    
+                                    {% if 'demo' in analyzed_video.video_transcript.lower() or 'placeholder' in analyzed_video.video_transcript.lower() %}
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Demo Mode Active
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Sentiment Analysis Results -->
+                            <div class="mb-3">
+                                <h6 class="card-title">
+                                    <i class="fas fa-brain text-primary me-2"></i>
+                                    Sentiment Analysis Results:
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="border rounded p-3 text-center">
+                                            <small class="text-muted d-block mb-2">Overall Sentiment</small>
+                                            {% if analyzed_video.sentiment == 'positive' %}
+                                                <span class="badge bg-success fs-6">Positive</span>
+                                                <div class="mt-2 small text-success">
+                                                    <i class="fas fa-smile me-1"></i>
+                                                    Content shows positive emotions
+                                                </div>
+                                            {% elif analyzed_video.sentiment == 'negative' %}
+                                                <span class="badge bg-danger fs-6">Negative</span>
+                                                <div class="mt-2 small text-danger">
+                                                    <i class="fas fa-frown me-1"></i>
+                                                    Content shows negative emotions
+                                                </div>
+                                            {% elif analyzed_video.sentiment == 'neutral' %}
+                                                <span class="badge bg-secondary fs-6">Neutral</span>
+                                                <div class="mt-2 small text-secondary">
+                                                    <i class="fas fa-meh me-1"></i>
+                                                    Content shows neutral emotions
+                                                </div>
+                                            {% else %}
+                                                <span class="badge bg-warning fs-6">N/A</span>
+                                                <div class="mt-2 small text-warning">
+                                                    <i class="fas fa-question me-1"></i>
+                                                    Sentiment could not be determined
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="border rounded p-3 text-center">
+                                            <small class="text-muted d-block mb-2">Sentiment Score</small>
+                                            {% if analyzed_video.polarity %}
+                                                <span class="badge bg-primary fs-6">{{ "%.3f"|format(analyzed_video.polarity) }}</span>
+                                                <div class="mt-2 small text-primary">
+                                                    {% if analyzed_video.polarity > 0.1 %}
+                                                        <i class="fas fa-arrow-up me-1"></i>
+                                                        Positive sentiment
+                                                    {% elif analyzed_video.polarity < -0.1 %}
+                                                        <i class="fas fa-arrow-down me-1"></i>
+                                                        Negative sentiment
+                                                    {% else %}
+                                                        <i class="fas fa-minus me-1"></i>
+                                                        Neutral sentiment
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                                <div class="mt-2 small text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Score not available
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Transcript -->
+                            {% if analyzed_video.video_transcript %}
+                            <div class="mb-3">
+                                <h6 class="card-title">
+                                    <i class="fas fa-file-alt text-primary me-2"></i>
+                                    Video Transcript (Converted Speech-to-Text):
+                                </h6>
+                                <div class="bg-light border rounded p-3">
+                                    {% if 'demo' in analyzed_video.video_transcript.lower() or 'placeholder' in analyzed_video.video_transcript.lower() %}
+                                        <div class="alert alert-info mb-2">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Demo Mode:</strong> This is demo content for testing. In production, this would show the actual speech converted from your video.
+                                        </div>
+                                    {% endif %}
+                                    <p class="mb-0">{{ analyzed_video.video_transcript }}</p>
+                                </div>
+                                
+                                <!-- Language and Translation Info -->
+                                {% if analyzed_video.detected_language %}
+                                <div class="mt-2 small text-muted">
+                                    <i class="fas fa-language me-1"></i>
+                                    Detected Language: <strong>{{ analyzed_video.detected_language|upper }}</strong>
+                                    {% if analyzed_video.detected_language != 'en' %}
+                                        <span class="ms-2">
+                                            <i class="fas fa-exchange-alt me-1"></i>
+                                            Translated to English for analysis
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="mt-2 small text-muted">
+                                    <i class="fas fa-language me-1"></i>
+                                    Language: <strong>English</strong> (Default)
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Processing Steps -->
+                            <div class="mb-3">
+                                <h6 class="card-title">
+                                    <i class="fas fa-cogs text-primary me-2"></i>
+                                    Processing Steps:
+                                </h6>
+                                <div class="bg-light border rounded p-3">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <div class="mb-2">
+                                                <i class="fas fa-download fa-2x text-primary"></i>
+                                            </div>
+                                            <small class="text-muted">1. Video Download</small>
+                                            <div class="mt-1">
+                                                {% if analyzed_video.video_url %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="mb-2">
+                                                <i class="fas fa-volume-up fa-2x text-primary"></i>
+                                            </div>
+                                            <small class="text-muted">2. Audio Extraction</small>
+                                            <div class="mt-1">
+                                                {% if analyzed_video.video_transcript %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="mb-2">
+                                                <i class="fas fa-microphone fa-2x text-primary"></i>
+                                            </div>
+                                            <small class="text-muted">3. Speech-to-Text</small>
+                                            <div class="mt-1">
+                                                {% if analyzed_video.video_transcript %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="mb-2">
+                                                <i class="fas fa-brain fa-2x text-primary"></i>
+                                            </div>
+                                            <small class="text-muted">4. Sentiment Analysis</small>
+                                            <div class="mt-1">
+                                                {% if analyzed_video.sentiment %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Metadata -->
+                            <div class="small text-muted">
+                                <i class="fas fa-clock"></i> Analyzed: {{ analyzed_video.created_at.strftime('%Y-%m-%d %H:%M') if analyzed_video.created_at else 'N/A' }}<br>
+                                <i class="fas fa-hashtag"></i> ID: {{ analyzed_video.post_id }}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fab fa-tiktok fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Video Analyzed Yet</h5>
+                            <p class="text-muted">Enter a TikTok video URL above to start the analysis!</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Test with Your Video -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-flask text-primary"></i> Test with Your Video
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Ready to test? Use this video URL from your request:</p>
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       value="https://www.tiktok.com/@_electronic_city_/video/7528441133823692039?is_from_webapp=1&sender_device=pc" 
+                                       readonly>
+                                <button class="btn btn-outline-secondary" 
+                                        type="button" 
+                                        onclick="copyToClipboard(this.previousElementSibling)">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button class="btn btn-primary" 
+                                        type="button" 
+                                        onclick="fillVideoUrl('https://www.tiktok.com/@_electronic_city_/video/7528441133823692039?is_from_webapp=1&sender_device=pc')">
+                                    <i class="fas fa-play"></i> Use This Video
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(input) {
+    input.select();
+    document.execCommand('copy');
+    
+    // Show feedback
+    const button = input.nextElementSibling;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function fillVideoUrl(url) {
+    document.getElementById('video_url').value = url;
+    document.getElementById('video_url').focus();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}Instagram Analysis - Social Media Sentiment Analyzer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">Instagram Analysis</h1>
+                    <p class="card-text">Analyze Instagram hashtags with sentiment statistics and date filtering</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Positive Comments Bar Chart -->
+    {% if session.permissions.can_view_graphs %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><i class="fas fa-chart-bar"></i> Positive Comments by Month</h5>
+                    {% if session.is_admin %}
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('dashboard', graph_hashtag='') }}" 
+                           class="btn btn-sm btn-{{ 'primary' if not graph_hashtag_filter else 'outline-primary' }}">
+                            All Data
+                        </a>
+                        <a href="{{ url_for('dashboard', graph_hashtag='mtc') }}" 
+                           class="btn btn-sm btn-{{ 'primary' if graph_hashtag_filter == 'mtc' else 'outline-primary' }}">
+                            #mtc
+                        </a>
+                                         <a href="{{ url_for('dashboard', graph_hashtag='touchlebanon') }}"
+                    class="btn btn-sm btn-{{ 'primary' if graph_hashtag_filter == 'touchlebanon' else 'outline-primary' }}">
+                     #touchlebanon
+                 </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <canvas id="positiveBarChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <!-- End Positive Comments Bar Chart -->
+
+    <!-- Search and Filter Section -->
+    {% if session.permissions.can_search_hashtags %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-search"></i> Search & Filter</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('dashboard') }}">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="hashtag" class="form-label">Hashtag(s)</label>
+                                    <input type="text" class="form-control" id="hashtag" name="hashtag" 
+                                           placeholder="Enter hashtag (e.g., mtc, tech, ai)" required>
+                                    <div class="form-text">You can enter multiple hashtags separated by commas</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search"></i> Analyze
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-lock"></i>
+                <strong>Search Restricted:</strong> You don't have permission to search and analyze hashtags. 
+                Contact your administrator for access.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+    <!-- Total Posts Count -->
+    {% if total_posts > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ unique_posts }}</h3>
+                    <p class="card-text">Total Posts Analyzed</p>
+                    <small>Comments were taken from {{ unique_posts }} unique posts</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistics Cards -->
+    {% if total_posts > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <a href="{{ url_for('filtered_results') }}" class="text-decoration-none">
+                <div class="card bg-primary text-white hover-card">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">{{ total_posts }}</h3>
+                        <p class="card-text">Total Comments</p>
+                        <small>Click to view all</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('filtered_results', sentiment='positive') }}" class="text-decoration-none">
+                <div class="card bg-success text-white hover-card">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">{{ positive_posts }}</h3>
+                        <p class="card-text">Positive</p>
+                        <small>{{ "%.1f"|format(positive_percentage) }}% - Click to view</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('filtered_results', sentiment='negative') }}" class="text-decoration-none">
+                <div class="card bg-danger text-white hover-card">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">{{ negative_posts }}</h3>
+                        <p class="card-text">Negative</p>
+                        <small>{{ "%.1f"|format(negative_percentage) }}% - Click to view</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('filtered_results', sentiment='neutral') }}" class="text-decoration-none">
+                <div class="card bg-secondary text-white hover-card">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">{{ neutral_posts }}</h3>
+                        <p class="card-text">Neutral</p>
+                        <small>{{ "%.1f"|format(neutral_percentage) }}% - Click to view</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Overall Sentiment Statistics (Including Comments) -->
+    {% if posts and posts|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-comments text-info"></i> Overall Sentiment Analysis (Including Comments)</h5>
+                    <small class="text-muted">Sentiment analysis considering both post captions and user comments</small>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h4 class="text-success">
+                                    {% set overall_positive = posts|selectattr('overall_sentiment', 'equalto', 'positive')|list|length %}
+                                    {{ overall_positive }}
+                                </h4>
+                                <p class="mb-0">Overall Positive</p>
+                                <small class="text-muted">Caption + Comments</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h4 class="text-danger">
+                                    {% set overall_negative = posts|selectattr('overall_sentiment', 'equalto', 'negative')|list|length %}
+                                    {{ overall_negative }}
+                                </h4>
+                                <p class="mb-0">Overall Negative</p>
+                                <small class="text-muted">Caption + Comments</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h4 class="text-secondary">
+                                    {% set overall_neutral = posts|selectattr('overall_sentiment', 'equalto', 'neutral')|list|length %}
+                                    {{ overall_neutral }}
+                                </h4>
+                                <p class="mb-0">Overall Neutral</p>
+                                <small class="text-muted">Caption + Comments</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note:</strong> Overall sentiment combines the post caption sentiment with the sentiment of all user comments. 
+                                This provides a more comprehensive view of how the community feels about each post.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-bar fa-4x text-muted mb-4"></i>
+                    <h3 class="text-muted">No Data Available</h3>
+                    <p class="text-muted">Start by analyzing a hashtag to see sentiment statistics</p>
+                    {% if session.permissions.can_search_hashtags %}
+                    <a href="#search-section" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Analyze Hashtag
+                    </a>
+                    {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-lock"></i> You don't have permission to analyze hashtags
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Posts Display Section -->
+    {% if posts and posts|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> All Captions/Comments for Analyzed Hashtags</h5>
+                    <small class="text-muted">Showing all posts for: 
+                        {% for hashtag in session.last_analyzed_hashtags %}
+                            #{{ hashtag }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Caption/Comment</th>
+                                    <th>Hashtag</th>
+                                    <th>Sentiment</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in posts %}
+                                <tr>
+                                    <td>
+                                        <div class="{% if post.caption and post.caption|length > 100 %}text-truncate{% endif %}">
+                                            {% if post.caption %}
+                                                <span class="{% if 'ا' in post.caption or 'ب' in post.caption or 'ت' in post.caption or 'ث' in post.caption or 'ج' in post.caption or 'ح' in post.caption or 'خ' in post.caption or 'د' in post.caption or 'ذ' in post.caption or 'ر' in post.caption or 'ز' in post.caption or 'س' in post.caption or 'ش' in post.caption or 'ص' in post.caption or 'ض' in post.caption or 'ط' in post.caption or 'ظ' in post.caption or 'ع' in post.caption or 'غ' in post.caption or 'ف' in post.caption or 'ق' in post.caption or 'ك' in post.caption or 'ل' in post.caption or 'م' in post.caption or 'ن' in post.caption or 'ه' in post.caption or 'و' in post.caption or 'ي' in post.caption %}arabic-text{% else %}mixed-text{% endif %}">
+                                                    {{ post.caption[:100] }}{% if post.caption|length > 100 %}...{% endif %}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">No caption</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">#{{ post.hashtag }}</span>
+                                    </td>
+                                    <td>
+                                        {% if post.sentiment == 'positive' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-smile"></i> Positive
+                                            </span>
+                                        {% elif post.sentiment == 'negative' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-frown"></i> Negative
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-meh"></i> Neutral
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else 'N/A' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('post_detail', post_id=post.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Custom CSS for better styling -->
+<style>
+.progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+}
+.progress-bar {
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Arabic text support */
+.arabic-text {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.mixed-text {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+/* Hover effect for clickable cards */
+.hover-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.hover-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %} 
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+// Position sentiment indicators based on polarity
+document.addEventListener('DOMContentLoaded', function() {
+    const sentimentBars = document.querySelectorAll('.sentiment-bar');
+    
+    sentimentBars.forEach(bar => {
+        const polarity = parseFloat(bar.dataset.polarity);
+        const indicator = bar.querySelector('.sentiment-indicator');
+        
+        // Convert polarity (-1 to 1) to percentage (0 to 100)
+        const position = ((polarity + 1) / 2) * 100;
+        
+        // Position the indicator
+        indicator.style.left = position + '%';
+        
+        // Add color based on sentiment
+        const sentiment = bar.dataset.sentiment;
+        if (sentiment === 'positive') {
+            indicator.style.borderBottomColor = '#10b981';
+        } else if (sentiment === 'negative') {
+            indicator.style.borderBottomColor = '#ef4444';
+        } else {
+            indicator.style.borderBottomColor = '#6b7280';
+        }
+    });
+});
+</script>
+
+{% if session.permissions.can_view_graphs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Prepare data for the bar chart
+    const chartLabels = {{ chart_labels|tojson }};
+    const chartData = {{ chart_data|tojson }};
+    const ctx = document.getElementById('positiveBarChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Positive Comments (%)',
+                data: chartData,
+                backgroundColor: '#2196f3',
+                borderColor: '#1976d2',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Percentage of Positive Comments (%)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %} 
